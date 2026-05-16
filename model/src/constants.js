@@ -1,5 +1,5 @@
 export const eruptiveRegimes = [
-    {depth: 2.5, gas: 0, h0: 5.9, h10: 5.7, h20: 5.4, regime: "weak"},
+    {depth: 2.5, gas: 0, h0: 5.9, h10: 5.7, h20: 5.4, regime: "none"},
     {depth: 2.5, gas: 1, h0: 6.1, h10: 5.9, h20: 5.6, regime: "weak"},
     {depth: 2.5, gas: 2, h0: 6.4, h10: 6.1, h20: 5.8, regime: "weak"},
     {depth: 2.5, gas: 3, h0: 6.7, h10: 6.3, h20: 6.0, regime: "transitional"},
@@ -7,7 +7,7 @@ export const eruptiveRegimes = [
     {depth: 2.5, gas: 5, h0: 7.3, h10: 6.9, h20: 6.6, regime: "plinian"},
     {depth: 2.5, gas: 6, h0: 7.6, h10: 7.2, h20: 6.8, regime: "plinian"},
 
-    {depth: 5.0, gas: 0, h0: 6.2, h10: 5.9, h20: 5.6, regime: "weak"},
+    {depth: 5.0, gas: 0, h0: 6.2, h10: 5.9, h20: 5.6, regime: "none"},
     {depth: 5.0, gas: 1, h0: 6.6, h10: 6.2, h20: 5.9, regime: "weak"},
     {depth: 5.0, gas: 2, h0: 6.9, h10: 6.5, h20: 6.2, regime: "transitional"},
     {depth: 5.0, gas: 3, h0: 7.3, h10: 6.9, h20: 6.6, regime: "transitional"},
@@ -15,7 +15,7 @@ export const eruptiveRegimes = [
     {depth: 5.0, gas: 5, h0: 8.0, h10: 7.6, h20: 7.3, regime: "plinian"},
     {depth: 5.0, gas: 6, h0: 8.4, h10: 8.0, h20: 7.6, regime: "plinian"},
 
-    {depth: 7.5, gas: 0, h0: 6.5, h10: 6.1, h20: 5.8, regime: "weak"},
+    {depth: 7.5, gas: 0, h0: 6.5, h10: 6.1, h20: 5.8, regime: "none"},
     {depth: 7.5, gas: 1, h0: 6.9, h10: 6.5, h20: 6.2, regime: "transitional"},
     {depth: 7.5, gas: 2, h0: 7.3, h10: 6.9, h20: 6.6, regime: "transitional"},
     {depth: 7.5, gas: 3, h0: 7.7, h10: 7.3, h20: 7.0, regime: "plinian"},
@@ -23,7 +23,7 @@ export const eruptiveRegimes = [
     {depth: 7.5, gas: 5, h0: 8.5, h10: 8.1, h20: 7.7, regime: "plinian"},
     {depth: 7.5, gas: 6, h0: 8.9, h10: 8.5, h20: 8.1, regime: "plinian"},
 
-    {depth: 10, gas: 0, h0: 6.8, h10: 6.4, h20: 6.0, regime: "weak"},
+    {depth: 10, gas: 0, h0: 6.8, h10: 6.4, h20: 6.0, regime: "none"},
     {depth: 10, gas: 1, h0: 7.2, h10: 6.8, h20: 6.5, regime: "transitional"},
     {depth: 10, gas: 2, h0: 7.7, h10: 7.3, h20: 7.0, regime: "transitional"},
     {depth: 10, gas: 3, h0: 8.1, h10: 7.7, h20: 7.3, regime: "plinian"},
@@ -33,6 +33,15 @@ export const eruptiveRegimes = [
 ];
 
 export const eruptionFeatures = {
+    none: {
+        smoke: "none",
+        ashAmount: "none",
+        sound: "silence",
+        infoBoxText: `
+            <h2>No Eruption</h2>
+            If there would be no gas no eruption would happen. (This never happens in reality, there is always some amount of gas in the magma chamber).
+        `
+    },
     weak: {
         smoke: "light",
         ashAmount: "none",
@@ -71,17 +80,58 @@ export const eruptionFeatures = {
         `
     }
 };
-
+// Creating POIs
 export const annotations = [
     {
-        name: "POI?",
-        position: [-4, -3, 3],
+        name: "Magma Chamber",
+        position: [0.89, -24.95, 2.51], 
         infoBoxText: `
-            <h2>A point of interest!</h2>
-            Let us pretend that this is a point of interest, but to be fair, there is nothing particularly interesting with this point...
+            <h2>Where the magic happens!</h2>
+            In this meltpot of rock and gas, the magma is stored before it finds its way to the surface. The magma chamber is a key component of the volcanic system, and its properties can influence the style and intensity of eruptions.
+        `
+    },
+    {
+        name: "Conduit",
+        position: [0.80, -1.15, 2.1],
+        infoBoxText: `
+            <h2>Where the action happens!</h2>
+            The conduit is the pathway through which magma travels from the magma chamber to the surface during an eruption. It can be thought of as a volcanic "pipe" that allows the magma to escape and create an eruption. Narrow conduits can lead to more explosive eruptions, while wider conduits may result in effusive eruptions with lava flows.
+        `
+    }
+    ,
+    {
+        name: "Plume",
+        position: [3.25, 10.63, 0.89],
+        infoBoxText: `
+            <h2>Where the burst happens!</h2>
+            The plume is the column of volcanic gases and ash that rises from the crater during an eruption. It can be thought of as the "chimney" of the volcano, carrying the erupted material high into the atmosphere. The size and shape of the plume can provide clues about the intensity and style of the eruption.
+        `
+    }
+    ,
+    {
+        name: "Crater",
+        position: [0.21, 8.04, 0.50],
+        infoBoxText: `
+            <h2>Where the burst happens!</h2>
+            The plume is the column of volcanic gases and ash that rises from the crater during an eruption. It can be thought of as the "chimney" of the volcano, carrying the erupted material high into the atmosphere. The size and shape of the plume can provide clues about the intensity and style of the eruption.
         `
     }
 ];
+export const parameterInfos = {
+    depthInfo: `
+        <h2>Depth</h2>
+        <p>Depth changes the subsurface vent depth. Deeper vents alter eruption style, model stretching, and plume behavior.</p>
+    `,
+    gasDensityInfo: `
+        <h2>Gas Content</h2>
+        <p>The more gas that is dissolved in the magma the more eruptive gas is released into the plume. Higher values make the eruption plume denser and more visible.</p>
+    `,
+    windSpeedInfo: `
+        <h2>Wind Speed</h2>
+        <p>Wind speed affects plume shape and drift. Higher wind values stretch the plume more horizontally.</p>
+    `
+};
+
 
 export const skyTopColor = 0x0172ad;
 export const skyBottomColor = 0xffffff;

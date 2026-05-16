@@ -2,10 +2,8 @@ import { renderPlaceView } from "./placeview.js";
 
 let selectedPlace = null;
 
-let year = 2005;
-const minYear = 2005;
-const maxYear = 2023;
-const tickMs = 900;
+let year, minYear, maxYear;
+const tickMs = 2000; // ms for each tick when pushing play button
 let intervalId = null;
 
 let map;
@@ -36,6 +34,21 @@ function emissionRadius(props, year, options = {}) {
   const logValue = Math.log10(value + 1);
 
   return minRadius + scale * logValue;
+}
+
+// Finds max and min value of year from volcanoes.json for the emission slider.
+function computeYearRange(data) {
+  let min = Infinity, max = -Infinity; //all years will be larger than -inf and smaller than inf
+  for (const f of data.features || []) { // loop through all volcanoes
+    for (const key of Object.keys(f.properties || {})) { //loop through all properties of the volcano
+      const y = Number(key); // store property key
+      if (Number.isInteger(y) && y >= 1800 && y <= 2200) { //if key is a number
+        if (y < min) min = y; //if y is smaller than previous y
+        if (y > max) max = y;
+      }
+    }
+  }
+  return min === Infinity ? { min: 2005, max: 2023 } : { min, max }; //if min=inf no years was found and 2005,2023 are used as stand in values.
 }
 
 //for legend
@@ -74,11 +87,11 @@ function openVolcano(feature, layer) {
 
   // zoom in to selected volcano
   if (layer?.getLatLng) {
-    map.setView(layer.getLatLng(), 10, { animate: true });
+    map.setView(layer.getLatLng(), 4, { animate: true });
   }
 
-  const [lng, lat] = feature.geometry.coordinates;
-  renderPlaceOverlay(place, [lat, lng]);
+  const [lng, lat] = feature.geometry.coordinates; //fetches lng lat from volcanoes.json
+  renderPlaceOverlay(place, [lat, lng]);          
 }
 
 function closeOverlay() {
@@ -196,7 +209,7 @@ function renderPlaceOverlay(place, latlng) {
   } else {
     overlayEl.style.display = "";
   }
-
+//------------Emission graph----------------
   const renderEmissionDiagram = (container, data) => {
   container.innerHTML = "";
 
@@ -300,6 +313,27 @@ function renderPlaceOverlay(place, latlng) {
     axisGroup.appendChild(label);
   });
 
+// Y label 
+  const yLabel = document.createElementNS(svgNS, "text");
+  yLabel.setAttribute("x", -(margin.top + innerHeight / 2));
+  yLabel.setAttribute("y", 12);
+  yLabel.setAttribute("text-anchor", "middle");
+  yLabel.setAttribute("font-size", "15");
+  yLabel.setAttribute("fill", "#ccc");
+  yLabel.setAttribute("transform", "rotate(-90)");
+  yLabel.textContent = "SO₂ (Mt/y)";
+  axisGroup.appendChild(yLabel);
+
+// X label 
+  const xLabel = document.createElementNS(svgNS, "text");
+  xLabel.setAttribute("x", margin.left + innerWidth / 2);
+  xLabel.setAttribute("y", height - 4);
+  xLabel.setAttribute("text-anchor", "middle");
+  xLabel.setAttribute("font-size", "15");
+  xLabel.setAttribute("fill", "#ccc");
+  xLabel.textContent = "Year";
+  axisGroup.appendChild(xLabel);
+
   svg.appendChild(axisGroup);
 
   // ---- polyline ----
@@ -316,6 +350,7 @@ function renderPlaceOverlay(place, latlng) {
   svg.appendChild(polyline);
   container.appendChild(svg);
 };
+//------------End emission graph----------------
 
   // Hide volcano select while overlay is open
   hideVolcanoControl(true);
@@ -350,6 +385,7 @@ function hideVolcanoControl(hide = true) {
   }
 }
 
+//Fetches  the map from CARTO and initialize as background
 function initMap() {
   const worldBounds = L.latLngBounds(
     [
@@ -365,7 +401,7 @@ function initMap() {
     maxBoundsViscosity: 1.0
   }).setView([15, 60], 2);
 
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png", {
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png", {
     attribution: "&copy; CARTO &copy; OSM",
     subdomains: "abcd",
     maxZoom: 19,
@@ -374,52 +410,54 @@ function initMap() {
     bounds: worldBounds
   }).addTo(map);
 
-  // Year control
-  const YearControl = L.Control.extend({
-    onAdd() {
-      const container = L.DomUtil.create("div", "leaflet-bar year-control");
-      container.innerHTML = `
-        <div class="yc-row">
-          <button class="yc-btn" aria-label="Play/Pause" title="Play/Pause">▶</button>
-          <div class="yc-display">${year}</div>
-        </div>
-        <input class="yc-slider" type="range" min="${minYear}" max="${maxYear}" step="1" value="${year}" />
-      `;
-
-      L.DomEvent.disableClickPropagation(container);
-      L.DomEvent.disableScrollPropagation(container);
-
-      const btn = container.querySelector(".yc-btn");
-      const slider = container.querySelector(".yc-slider");
-
-      btn.addEventListener("click", () => {
-        if (intervalId) {
-          stopTick();
-          btn.textContent = "▶";
-        } else {
-          startTick();
-          btn.textContent = "⏸";
-        }
-      });
-
-      slider.addEventListener("input", (e) => {
-        stopTick();
-        btn.textContent = "▶";
-        setYear(Number(e.target.value));
-      });
-
-      return container;
-    }
-  });
-
-  map.addControl(new YearControl({ position: "bottomleft" }));
-
-
-  // Load GeoJSON
-  // Load GeoJSON
+  // Fetches volcanoes as a GeoJSON Point
 fetch("resources/volcanoes.geojson")
   .then((r) => r.json())
   .then((data) => {
+    const { min, max } = computeYearRange(data);
+    minYear = min;
+    maxYear = max;
+    year = minYear;
+
+    const YearControl = L.Control.extend({
+      onAdd() {
+        const container = L.DomUtil.create("div", "leaflet-bar year-control");
+        container.innerHTML = `
+          <div class="yc-row">
+            <button class="yc-btn" aria-label="Play/Pause" title="Play/Pause">▶</button>
+            <div class="yc-display">${year}</div>
+          </div>
+          <input class="yc-slider" type="range" min="${minYear}" max="${maxYear}" step="1" value="${year}" />
+        `;
+
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+
+        const btn = container.querySelector(".yc-btn");
+        const slider = container.querySelector(".yc-slider");
+
+        btn.addEventListener("click", () => {
+          if (intervalId) {
+            stopTick();
+            btn.textContent = "▶";
+          } else {
+            startTick();
+            btn.textContent = "⏸";
+          }
+        });
+
+        slider.addEventListener("input", (e) => {
+          stopTick();
+          btn.textContent = "▶";
+          setYear(Number(e.target.value));
+        });
+
+        return container;
+      }
+    });
+
+    map.addControl(new YearControl({ position: "bottomleft" }));
+
     const baseStyle = {
       fillColor: "#FFD700",
       color: "#000",
@@ -428,7 +466,7 @@ fetch("resources/volcanoes.geojson")
       fillOpacity: 0.8
     };
 
-    // Add features
+    // Adds circle markers that are used in main to create the emission circlesfor each volcano
     geoLayer = L.geoJSON(data, {
       pointToLayer: (feature, latlng) => {
         const radius = emissionRadius(feature.properties || {}, year);
@@ -487,8 +525,6 @@ fetch("resources/volcanoes.geojson")
   .catch((err) => {
     console.error("Failed to load GeoJSON", err);
   });
-const legendValues = computeLegendValuesFromData(data);
-        createStaticLegend(legendValues);
 
 function createStaticLegend(legendValues) {
   if (!map) return;
@@ -497,7 +533,7 @@ function createStaticLegend(legendValues) {
     onAdd() {
       const div = L.DomUtil.create("div", "leaflet-bar emission-legend");
       div.innerHTML = `
-        <div class="legend-title">Emission</div>
+        <div class="legend-title">Emission SO2 Gt/y</div>
         <div class="legend-items">
           ${legendValues.map(v => {
             const r = emissionRadius({ [String(minYear)]: v }, minYear);
@@ -530,4 +566,3 @@ function createStaticLegend(legendValues) {
 document.addEventListener("DOMContentLoaded", () => {
   initMap();
 });
-

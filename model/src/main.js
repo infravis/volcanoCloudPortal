@@ -7,6 +7,7 @@ import {Ash} from './ash.js';
 import {VolcanoParameters} from './parameters.js';
 import {EruptionHandler} from './eruption.js';
 import {AnnotationHandler} from './annotationHandler.js';
+import {parameterInfos} from './constants.js';
 import {skyMesh} from './sky.js';
 import {setupLights} from './lights.js';
 
@@ -21,6 +22,57 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleAudio(audioToggle.checked);
         });
     }
+
+    const infoboxDiv = document.getElementById('infobox');
+    const defaultInfoboxHTML = infoboxDiv.innerHTML;
+    let parameterInfoOpen = false;
+    let openButtonId = null;
+    let firstButtonId = null;
+
+    Object.entries(parameterInfos).forEach(([buttonId, message]) => {
+        const button = document.getElementById(buttonId);
+        if (button && infoboxDiv) {
+            if (!firstButtonId) {
+                firstButtonId = buttonId;
+            }
+
+            // Hover: only change button style
+            button.addEventListener('mouseover', () => {
+                button.classList.add('hovered');
+            });
+            button.addEventListener('mouseout', () => {
+                button.classList.remove('hovered');
+            });
+
+            // Click: toggle text visibility
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (openButtonId === buttonId) {
+                    infoboxDiv.innerHTML = defaultInfoboxHTML;
+                    openButtonId = null;
+                    parameterInfoOpen = false;
+                } else {
+                    // Clicking a different button opens its text
+                    infoboxDiv.innerHTML = message;
+                    openButtonId = buttonId;
+                    parameterInfoOpen = true;
+                }
+            });
+        }
+    });
+
+    // Initialize with first button's info displayed
+    if (firstButtonId && parameterInfos[firstButtonId]) {
+    }
+
+    document.addEventListener('click', (event) => {
+        const clickedParameterButton = event.target.closest('.parameter-info-button');
+        if (parameterInfoOpen && !clickedParameterButton && !(view && view.annotationHandler && view.annotationHandler.annotationOpen)) {
+            infoboxDiv.innerHTML = defaultInfoboxHTML;
+            openButtonId = null;
+            parameterInfoOpen = false;
+        }
+    });
 });
 
 function toggleAudio(enable) {
@@ -63,7 +115,7 @@ class View {
         this.scene.add(this.ash);
         this.ash.createAshParticles();
 
-        this.eruptionHandler.updateEruption();
+        this.eruptionHandler.updateEruption(undefined, false);
 
         // Add controls
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -76,13 +128,28 @@ class View {
         this.controls.minAzimuthAngle = -Math.PI/3; // 60 degrees (from front)
         this.controls.maxAzimuthAngle = Math.PI/3; // 60 degrees (from front)
         this.controls.enablePan = true; // Enable pan when controls are on
+        
+        //clicker for positions, remove later
+        this.canvas.addEventListener('click', event => {
+            const pointer = new THREE.Vector2(
+                (event.clientX / this.canvas.offsetWidth) * 2 - 1,
+                -(event.clientY / this.canvas.offsetHeight) * 2 + 1
+            );
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(pointer, this.camera);
+            const hits = raycaster.intersectObjects(this.scene.children, true);
+            if (hits.length > 0) {
+                const p = hits[0].point;
+                console.log(`position: [${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}]`);
+            }
+        });
+        // end of clicker
 
         setupLights(this.scene);
 
         // GLTF Loader
         const loader = new GLTFLoader();
         loader.setPath("resources/");
-
         // Variables for fade animation
         this.terrain = null;
         this.volcano = null;
@@ -150,7 +217,7 @@ class View {
 
             this.stretchVolcano();
 
-            this.checkEruption();
+            this.checkEruption(false);
 
         }, undefined, function (error) {
             console.error('An error happened loading volcano:', error);
@@ -279,10 +346,10 @@ class View {
         }
     }
 
-    checkEruption() {
+    checkEruption(updateInfobox = true) {
         const regime = this.eruptionHandler.getRegime();
         if (this.eruptionHandler.previousRegime != regime) {
-            this.eruptionHandler.updateEruption(regime);
+            this.eruptionHandler.updateEruption(regime, updateInfobox);
             this.eruptionHandler.previousRegime = regime;
         }
     };

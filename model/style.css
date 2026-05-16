@@ -19,6 +19,12 @@ body {
     top: 10px;
 }
 
+#logoLink {
+    position: absolute;
+    left: 140px;
+    top: 10px;
+}
+
 #infobox {
     position: absolute;
     top: 50%;
@@ -58,4 +64,84 @@ body {
   font-size: 20px;
   line-height: 1;
   transition: opacity 2s, top 0.1s ease 0s, left 0.1s ease 0s;
+}
+
+
+
+
+/* Malin styles */
+.parameters label.parameter-row {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.parameter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.parameter-header span {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.1;
+}
+
+.parameter-info-button {
+    position: relative;
+    overflow: hidden;
+    background: transparent url("resources/label.png") center/cover no-repeat;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    padding: 0;
+    border-radius: 50%;
+}
+
+.parameter-info-button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(255, 0, 0, 0);
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.parameter-info-button:hover::after,
+.parameter-info-button:focus::after {
+    background: rgba(255, 0, 0, 0.2);
+}
+
+.parameter-info-button:hover,
+.parameter-info-button:focus {
+    transform: scale(1.1);
+    outline: none;
+}
+
+.info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 0;
+    vertical-align: middle;
+}
+
+.info-btn:hover,
+.info-btn:focus {
+    background: rgba(255, 255, 255, 0.08);
+    outline: none;
+}
+
+.info-btn:active {
+    transform: translateY(1px);
 }
